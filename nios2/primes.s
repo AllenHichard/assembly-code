@@ -1,20 +1,32 @@
-#			Factorial of a number
+#			Prime Sequence Generator
 #
-#		Allen Hichard and Jo„o Paulo
+#		Allen Hichard and Jo√£o Paulo
 #
 #				Code in C
 #
 # 
 # main() {
-#	 int number = read_value_0;
-#	 int resp = factorial(number)
-# }
+#	 int primes[15];
+#	 int quantity = read_value_0;
+#	 int numbers_found = 1;
+#	 int current_number = 1;
+#	 int divisor = 0;
+#	 int i = 0;
 #
-# int factorial(int number) {
-#	 if (number <= 0)
-#		 return 1;
-#
-#	 return number * factorial(number - 1);
+# number_sequence_loop:
+#	 while (numbers_found <= quantity) {
+#		 current_number = current_number + 1;
+#		 divisor = 2;
+#		 while(divisor < current_number) {
+#			if (current_number%divisor == 0)
+#				goto number_sequence_loop;
+#			
+#			divisor = divisor + 1;
+#		}
+#		primes[i] = current_number;
+#		i = i + 1;
+#		numbers_found = numbers_found + 1;
+#	 }
 # }
 
 .macro push reg #macro for inserting things into the stack
@@ -28,6 +40,7 @@
 .endm
 
 .data
+	primes: .word 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 #primes sequence
 .equ serial, 0x860 #address of UART0
 
 .global main
@@ -76,27 +89,30 @@ end_input_loop:
 	subi r13, r13, 1 #subtracs 1 from number of inputs left
 	bne r13, r0, input_loop #if there are more numbers to input repeats, otherwise start program
 
-#Here it is where the exponetial code starts
+#Here it is where the prime sequence code starts
 start:
-	pop r4 #r4 as number, that is going to be sent as parameter to the function factorial
-	call factorial
-	#r1 contains the final result
-	br end
+	pop r8 #The number of primes we need to generate
+	movia r9, primes #vector pointer
+	movi r10, 1 #current number
+	movi r11, 1 #number of primes found
 
-factorial:
-if_less_equal_zero:
-	bgt r4, r0,  else_less_equal_zero #This means: if (number > 0) go to the else label. if (number <= 0), execute the if code
-	movi r1, 1 #places 1 into the return register
-	ret #returns to the caller
-else_less_equal_zero: #if number is greater than 0
-	push ra #saves ra into the stack
-	push r4 #saves number into the stack
-	
-	subi r4, r4, 1 #subtracts 1 from the number and sends it as a parameter for factorial
-	call factorial #calls the procedure
-	pop r4 #restore the state of the number
-	pop ra #restores ra
-	mul r1, r4, r1 #multiplies the parameter(number) with the return of the previous factorial call, and saves the result into the return register
-	ret #returns to the callor
+number_sequence_loop:
+	bgt r11, r8, end #if already found all of the primes we need, go to end
+	addi r10, r10, 1 #else, go to the next number
+	movi r12, 2 #prepares the interative divisor number
+
+prime_check_loop:
+	bge r12, r11, found_prime #if the divisor is greater or equals to the current number, it means we didn't break the loop, so the current number is prime
+	div r13, r10, r12 #if we are still searching, check if the current number divides the interative divisor
+	mul r13, r13, r12
+	beq r13, r10, number_sequence_loop #if it is divisible, we break the loop and select the next number
+	addi r12, r12, 1 #if it doesn't divide, moves the interative divisor to the next number
+	br prime_check_loop #check it again
+
+found_prime: #if it's a prime number
+	addi r11, r11, 1 #increase the number of prime numbers found
+	stw r10, 0(r9) #stores the number into the vector
+	addi r9, r9, 4 #moves the vector pointer to the next value
+	br number_sequence_loop #try to find more primes
 
 end:

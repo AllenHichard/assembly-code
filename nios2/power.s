@@ -1,6 +1,6 @@
 # Exponentiation is a mathematical operation
 #
-#		Allen Hichard and Jo„o Paulo
+#		Allen Hichard and Jo√£o Paulo
 #
 #				Code in C
 #
